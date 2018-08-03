@@ -1,3 +1,25 @@
+Microprocessor/MECA2 Dashboard Overview:
+•	A microprocessor chip that is utilized in numerous controllers that touch almost every product John Deere produces will be 
+obsoleted and the dashboard is aiding the program management team to work with the platforms to understand last time buy quantities 
+which are planning to take place in 2022.  This dashboard has the potential to save the company 40 million in inventory as the team 
+would have otherwise over bought to ensure enough inventory lasted for the life of the products the chip is being utilized in.
+
+Data Connections
+•	HANA VIEW: CA_MTRL_MM_LOCAL
+
+•	HANA VIEW: CA_SA_PO
+
+•	HANA VIEW: CA_MIS_LOCAL
+
+•	HANA VIEW: CA_MTRL_STLOC
+
+1.	SharePoint Excel: Production PN's - this is the input list of part numbers that we use for the dashboards.
+2.	SharePoint Excel: Service Only PN's- this is the input list of part numbers that we use for the ‘Service’ dashboards.
+3.	SharePoint Excel: Platform Baseline - this is where we bring in platform and maybe a few other data fields.
+4.	SharePoint Excel: Platform Overrides - this provides the list of ‘Plant+Material Number’ combinations for which we need to override the ‘old’ platform values from ‘Platform Baseline’ sheet to ‘New Platform’ values mentioned in this sheet and maybe a few other data fields.
+
+
+*************************************************************************************************
 SELECT 
   "deere_pdm_analytics_model__CA_MTRL_MM_LOCAL"."MATKL" AS "Material Group Code",
   "deere_pdm_analytics_model__CA_MTRL_MM_LOCAL"."MATNR" AS "Material",
