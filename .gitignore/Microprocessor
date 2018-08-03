@@ -1,1 +1,56 @@
-aa
+SELECT 
+  "deere_pdm_analytics_model__CA_MTRL_MM_LOCAL"."MATKL" AS "Material Group Code",
+  "deere_pdm_analytics_model__CA_MTRL_MM_LOCAL"."MATNR" AS "Material",
+  "deere_pdm_analytics_model__CA_MTRL_MM_LOCAL"."ZZSRV" AS "Local Service Indicator",
+  "deere_pdm_analytics_model__CA_MTRL_MM_LOCAL"."MMSTA" AS "Plant Specific Material Status",
+  "deere_pdm_analytics_model__CA_MTRL_MM_LOCAL"."WERKS" AS "Plant",
+  "deere_pdm_analytics_model__CA_MTRL_MM_LOCAL"."BESKZ" AS "Local Procurement",
+"deere_pdm_analytics_model__CA_MTRL_MM_LOCAL"."DEEREAG_SRV_POS" AS "Procured Only for Service Flag",
+
+
+  "deere_pdm_analytics_model__CA_MTRL_MM_LOCAL"."MAKTX" AS "Material Description"
+FROM "deere.pdm.analytics.model::CA_MTRL_MM_LOCAL"  "deere_pdm_analytics_model__CA_MTRL_MM_LOCAL" 
+
+	 
+WHERE 
+"LATEST_REV_IND" = 'X'
+AND "deere_pdm_analytics_model__CA_MTRL_MM_LOCAL"."WERKS" NOT IN ('6M00','WO01','3B01','23AU','7M00','2900','PY99','PY22','3100','PY51','23NZ','WA01','1000','3200','2700','PY97','4100','PY10','3R00','2200') AND
+  "deere_pdm_analytics_model__CA_MTRL_MM_LOCAL"."MMSTA" NOT IN ('21', '31', '41', '51', '60', '61', '62','63')
+
+***************************
+SELECT 
+  "MIS_VENDOR_NAME" As "MIS Vendor Name",
+  "MIS_VENDOR_NUMBER" As "MIS Vendor Number",
+  "PLANT" As "Plant (MIS_Local)",
+  "CA_MIS_LOCAL"."MATERIAL" AS "MATERIAL (MIS_Local)"
+  
+FROM "_SYS_BIC"."deere.pdm.analytics.model/CA_MIS_LOCAL"  "CA_MIS_LOCAL"
+WHERE 
+"Revision_Level_Indicator" = 'X'
+And "Revision_Level_Indicator_Material" = 'X'
+
+*********************************************************************
+
+SELECT 
+"BSART" AS "Document Type",
+"MATNR" AS "Material",
+"WERKS" AS "Local Plant",
+
+Case When "KDATE_FORMAT" = '' Then ''
+ELSE "EBELN" END AS "Purchasing Doc Number",
+
+Case When "KDATE_FORMAT" = '' Then ''
+ELSE "LIFNR_LPAZKB" END AS "Purchasing Doc Vendor Number", 
+
+Case When "KDATE_FORMAT" = '' Then ''
+ELSE "LIFNR_NAME_LPAZKB" END AS "Purchasing Doc Vendor Name", 
+
+Case When "KDATE_FORMAT" = '' Then ''
+ELSE "KDATB_FORMAT" END AS "Purchasing Doc Validity Begin Date", 
+
+"KDATE_FORMAT" AS "Purchasing Doc Validity End Date",
+("MENGE_52WEEK") AS "MRP 52 Week Requirements"
+
+FROM "deere.pdm.analytics.model::CA_SA_PO"  "deere_pdm_analytics_model__CA_SA_PO"
+WHERE 
+"deere_pdm_analytics_model__CA_SA_PO"."BSART" NOT IN ('ZEXP', 'ZCCP', 'UB', 'ZNA','NB')
