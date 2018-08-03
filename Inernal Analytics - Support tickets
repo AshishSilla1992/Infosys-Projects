@@ -1,0 +1,638 @@
+set.seed(1000)
+#install.packages(c('dummies'))
+library('caret')
+library('tidyverse')
+library('dummies')
+library ('tsintermittent')
+library('forecast')
+library('lmtest')
+#setwd()
+
+RawDataM <- read.csv("Model.csv")
+head(RawDataM)
+RawDataM$Tdate <- as.Date(RawDataM$Tdate, "%m/%d/%Y")
+RawDataM$DDDD <- weekdays(as.Date(RawDataM$Tdate))
+head(RawDataM)
+# WeekendData <- RawDataM[RawDataM$DDDD %in% c("Saturday","Sunday"),]
+# WeekData <- RawDataM[!RawDataM$Tdate %in% WeekendData$Tdate, ]
+
+RawData <- RawDataM[,-3] ###
+
+# table(WeekendData$No_of_Tickets )
+# WeekendData_median <- median(WeekendData$No_of_Tickets)
+
+RawData <- RawData %>%
+             mutate(quantile = ntile(No_of_Tickets, 5)) ## Why classifying of tickets data into 5 groups of quantiles ?
+tail(RawData)
+
+RawData <- cbind(RawData, dummy(RawData$quantile, sep = "_")) 
+
+#index <- createDataPartition(RawData$No_of_Tickets, p=0.75, list=FALSE)
+trainSet <- RawData
+#testSet <- RawData[-index,]
+#dim(testSet)+dim(trainSet)
+dim(RawDataM)
+tail(RawDataM)
+
+
+tsData<- ts(trainSet[2:dim(trainSet)[1],2],start=c(2017,11),frequency=7) ## How freequency is 7 ??
+plot(tsData)
+plot(decompose(tsData))
+head(tsData)
+
+### I am getting an error when i try to decompose. Here, it is working coz the data is treated as the dat for some 60 years instead of 1 year, i guess
+
+Avg<- mean(trainSet$No_of_Tickets)
+
+############################################################################################
+#if(Avg <= 10)
+#{
+######### Croston
+
+#x_croston = crost(tsData,h=5) # from the tsintermittent package
+#x_croston=croston(tsData,h=5) # from the forecast package
+#x_croston$fitted
+#plot(x_croston)
+
+#crost(tsData,h=5,outplot=TRUE)
+#}else{
+#timeseriescomponents <- decompose(tsData)
+#plot(timeseriescomponents)
+
+####
+#urkpssTest(tsData, type = c("tau"), lags = c("short"),use.lag = NULL, doplot = TRUE)
+#tsstationary<-diff(tsData, differences=1)
+
+#timeseriesseasonallyadjusted <- tsData- timeseriescomponents$seasonal
+#tsstationary <- diff(timeseriesseasonallyadjusted, differences=1)
+
+
+{
+########################################################################
+  
+  ## 1. Auto-Arima
+  
+  #tsData<- ts(trainSet[2:dim(trainSet)[1],2],start=c(2017,11),frequency=7)
+  fitAutoArima<-auto.arima(tsData,stationary=T,seasonal=F,trace=T) ## Why Seasonal=F ??
+  #auto.arima(tsData, trace=TRUE)
+  AutoArimaAccuracy <- accuracy(fitAutoArima)
+  
+  Autoarima_Fitted<-round( forecast(fitAutoArima, h=dim(trainSet)[1])$fitted)
+  n = length(Autoarima_Fitted)
+  
+  Autoarima_Fitted_data<-data.frame(trainSet[1:n,],Autoarima_Fitted)
+  #library(xts)
+  # tsdata_xts <- as.xts(tsData)
+  # 
+  # AutoARIMA_
+  # autoplot (as.double( RawData$No_of_Tickets))
+  # autoplot(Autoarima_Fitted_data$Autoarima_Fitted)
+  # str(Autoarima_Fitted_data$Autoarima_Fitted)
+  Autoarima_Fitted_data$diff <- (Autoarima_Fitted_data$No_of_Tickets) - (round( Autoarima_Fitted_data$Autoarima_Fitted))
+  #####AUTO_ARIMA Linear Equation
+  #########################
+  dependent<-c('diff')
+  
+  Independent<-c('RawData_1','RawData_2','RawData_3','RawData_4','RawData_5')
+  eqn<-paste(Independent,collapse=' + ')
+  
+  Equation <- as.formula( paste(dependent,'~',eqn ))
+  
+  AutoARIMA_linearMod <- lm(Equation, data=Autoarima_Fitted_data) 
+  print(AutoARIMA_linearMod)
+  summary(AutoARIMA_linearMod)
+  
+  AutoARIMA_ResPred <- predict(AutoARIMA_linearMod, Autoarima_Fitted_data)
+  
+  AutoARIMA_actuals_preds_resd <- data.frame(cbind(actuals=Autoarima_Fitted_data$diff, predicteds=AutoARIMA_ResPred))
+  head(AutoARIMA_actuals_preds_resd)
+  correlation_accuracy <- cor(AutoARIMA_actuals_preds_resd)
+  
+  
+  AutoARIMA_Final_Pred <- data.frame(cbind(Autoarima_Fitted_data,AutoARIMA_ResPred))
+  head(AutoARIMA_Final_Pred)
+  AutoARIMA_Final_Pred$Regr_Predictions <- AutoARIMA_Final_Pred$Autoarima_Fitted + round(AutoARIMA_Final_Pred$AutoARIMA_ResPred)
+  
+  AutoARIMA_Comp_predictions <- data.frame(cbind(AutoARIMA_Final_Pred$Tdate, AutoARIMA_Final_Pred$No_of_Tickets, AutoARIMA_Final_Pred$Autoarima_Fitted,AutoARIMA_Final_Pred$Regr_Predictions ))
+  
+  AutoARIMA_Comp_predictions$AutoARIMA_Final_Pred.Tdate <- as.Date( AutoARIMA_Comp_predictions$AutoARIMA_Final_Pred.Tdate, origin="1970-01-01")
+  
+  head(AutoARIMA_Comp_predictions)
+  
+  AutoARIMA_Mape<-mean(abs((AutoARIMA_Comp_predictions$AutoARIMA_Final_Pred.No_of_Tickets - AutoARIMA_Comp_predictions$AutoARIMA_Final_Pred.Regr_Predictions )/AutoARIMA_Comp_predictions$AutoARIMA_Final_Pred.No_of_Tickets ))*100
+  AutoARIMA_Mape
+  
+  
+  ###########################################################
+  ######################## FUTURE FORECASTED VALUES
+  
+  Autoarima_Future <- round(forecast(fitAutoArima, h=30)$mean)
+  head(Autoarima_Future)
+  
+  
+  
+  Autoarima_Future_data<-data.frame(Autoarima_Future,RawData_1=1:30,RawData_2=30:1,RawData_3=0,RawData_4=0,RawData_5=0)
+  
+  # Autoarima_Future_data$diff <- (Autoarima_Future_data$No_of_Tickets) - (( Autoarima_Future_data$Autoarima_Future))
+  # 
+  # 
+  # #####STL+RandomWalk Linear Equation
+  # ######################### Model Accuracy
+  # dependent<-c('diff')
+  # 
+  # Independent<-c('RawData_1','RawData_2','RawData_3','RawData_4','RawData_5')
+  # eqn<-paste(Independent,collapse=' + ')
+  # 
+  # Equation <- as.formula( paste(dependent,'~',eqn ))
+  # 
+  # RWfit_linearMod <- lm(Equation, data=Autoarima_Future_data)# 
+  
+  
+  Autoarima_ResFut <- predict(RWfit_linearMod,Autoarima_Future_data )#
+  round(Autoarima_ResFut)
+  Autoarima_Future_Final <- round(Autoarima_Future + Autoarima_ResFut)
+  Autoarima_Future_Final
+  
+  #############
+  ##################################
+  
+  
+###############################################################
+  
+  ## 1. Auto-Arima
+  
+  #tsData<- ts(trainSet[2:dim(trainSet)[1],2],start=c(2017,11),frequency=7)
+  fitAutoArima<-auto.arima(tsData,stationary=T,seasonal=F,trace=T) ## Why Seasonal=F ??
+  #auto.arima(tsData, trace=TRUE)
+  AutoArimaAccuracy <- accuracy(fitAutoArima)
+  
+  Autoarima_Fitted<-round( forecast(fitAutoArima, h=dim(trainSet)[1])$fitted)
+  n = length(Autoarima_Fitted)
+  
+  Autoarima_Fitted_data<-data.frame(trainSet[1:n,],Autoarima_Fitted)
+  ##############################
+  ##2. Arima
+  fitARIMA<-arima(tsData, order=c(1,0,2),method="ML") ## How are the values of 'ORDER' decided ??
+  
+  ArimaAccuracy<- accuracy(fitARIMA)#
+  
+  #
+  ARIMA_Fitted<-round( forecast(fitARIMA, h=dim(trainSet)[1])$fitted)
+  n = length(ARIMA_Fitted)
+  #
+  ARIMA_Fitted_data<-data.frame(trainSet[1:n,],ARIMA_Fitted)
+  
+  ARIMA_Fitted_data$diff <- (ARIMA_Fitted_data$No_of_Tickets) - (round( ARIMA_Fitted_data$ARIMA_Fitted))
+  
+  
+  #####ARIMA Linear Equation
+  #########################
+  dependent<-c('diff')
+  
+  Independent<-c('RawData_1','RawData_2','RawData_3','RawData_4','RawData_5')
+  eqn<-paste(Independent,collapse=' + ')
+  
+  Equation <- as.formula( paste(dependent,'~',eqn ))
+  
+  ARIMA_linearMod <- lm(Equation, data=ARIMA_Fitted_data)# 
+  print(ARIMA_linearMod)
+  summary(ARIMA_linearMod)
+  
+  ARIMA_ResPred <- predict(ARIMA_linearMod, ARIMA_Fitted_data)#
+  
+  ARIMA_actuals_preds_resd <- data.frame(cbind(actuals=ARIMA_Fitted_data$diff, predicteds=ARIMA_ResPred))
+  head(ARIMA_actuals_preds_resd)
+  correlation_accuracy <- cor(ARIMA_actuals_preds_resd)
+  
+  
+  ARIMA_Final_Pred <- data.frame(cbind(ARIMA_Fitted_data,ARIMA_ResPred))#
+  head(ARIMA_Final_Pred)
+  
+  #
+  ARIMA_Final_Pred$Regr_Predictions <- ARIMA_Final_Pred$ARIMA_Fitted + round(ARIMA_Final_Pred$ARIMA_ResPred)
+  #
+  ARIMA_Comp_predictions <- data.frame(cbind(ARIMA_Final_Pred$Tdate, ARIMA_Final_Pred$No_of_Tickets, ARIMA_Final_Pred$ARIMA_Fitted,ARIMA_Final_Pred$Regr_Predictions ))
+  #
+  ARIMA_Comp_predictions$ARIMA_Final_Pred.Tdate <- as.Date( ARIMA_Comp_predictions$ARIMA_Final_Pred.Tdate,origin="1970-01-01")
+  
+  head(ARIMA_Comp_predictions)
+  #
+  ARIMA_Mape<-mean(abs((ARIMA_Comp_predictions$ARIMA_Final_Pred.No_of_Tickets - ARIMA_Comp_predictions$ARIMA_Final_Pred.Regr_Predictions )/ARIMA_Comp_predictions$ARIMA_Final_Pred.No_of_Tickets ))*100
+  ARIMA_Mape
+  ###########################################################
+  ######################## FUTURE FORECASTED VALUES
+  
+  Arima_Future <- round(forecast(fitARIMA, h=30)$mean)
+  head(Arima_Future)
+  
+  
+  
+  Arima_Future_data<-data.frame(Arima_Future,RawData_1=1:30,RawData_2=30:1,RawData_3=0,RawData_4=0,RawData_5=0)
+  
+  
+  Arima_ResFut <- predict(RWfit_linearMod,Arima_Future_data )#
+  round(Arima_ResFut)
+  Arima_Future_Final <- round(Arima_Future + Arima_ResFut)
+  Arima_Future_Final
+  
+  ####################
+  #################################################
+  ###############
+  #####3. STL+RandomWalk
+  
+  #data_deseason <- stl(tsData, t.window=15, s.window='periodic', robust=TRUE) 
+  
+  #f <- forecast(data_deseason, h=dim(testSet)[1],
+  #        forecastfunction=function(x,h,level){
+  #        fit <- Arima(x, order=c(2,0,2), include.mean=FALSE)
+  #        return(forecast(fit,h=dim(testSet)[1],level=level))})
+  #plot(f)
+  
+  #fit <- stlm(tsData, modelfunction=Arima, order=c(2,0,2))
+  #fc <- forecast(fit)
+  #plot(fc)
+  
+  
+  #tsData <- decompose(tsData)
+  #tsdata_sa<- tsData - tsData_components$seasonal  
+  
+  #lambdas <- BoxCox.lambda(tsData)
+  #ts_ets<-forecast(tsData,lambda = lambdas)
+  
+  #sample_ets<-data.frame(Model = "ETS",Actual = trainSet$No_of_Tickets,Fitted = ts_ets$fitted)
+  
+  
+  
+  #fit <- stl(trainSet, t.window=15, s.window="periodic", robust=TRUE)
+  
+  ####tsData = ts(trainSet[2:dim(trainSet)[1],2],start=c(2017,11),frequency=7)
+  RWfit = stl(tsData, s.window="periodic",robust=TRUE)
+  #eeadj <- seasadj(RWfit)
+  #plot(naive(eeadj), xlab="New Tickets",main="Naive forecasts of seasonally adjusted data")
+  
+  #plot(RWfit_fcast, ylab="New orders index")
+  #RW
+  
+  RWfit_Fitted <- round(forecast(RWfit, method="naive",h=(dim(trainSet)[1]))$fitted)
+  head(RWfit_Fitted)
+  n<-length(RWfit_Fitted)
+  
+  
+  stlRandomWalkAccuracy <- accuracy(forecast(RWfit, method="naive",h=dim(trainSet)[1]))
+  
+  
+  #
+  RWfit_Fitted_data<-data.frame(trainSet[1:n,],RWfit_Fitted)
+  
+  RWfit_Fitted_data$diff <- (RWfit_Fitted_data$No_of_Tickets) - (( RWfit_Fitted_data$RWfit_Fitted))
+  
+  
+  #####STL+RandomWalk Linear Equation
+  #########################
+  dependent<-c('diff')
+  
+  Independent<-c('RawData_1','RawData_2','RawData_3','RawData_4','RawData_5')
+  eqn<-paste(Independent,collapse=' + ')
+  
+  Equation <- as.formula( paste(dependent,'~',eqn ))
+  
+  RWfit_linearMod <- lm(Equation, data=RWfit_Fitted_data)# 
+  print(RWfit_linearMod)
+  summary(RWfit_linearMod)
+  
+  RWfit_ResPred <- predict(RWfit_linearMod, RWfit_Fitted_data)#
+  
+  #
+  RWfit_actuals_preds_resd <- data.frame(cbind(actuals=RWfit_Fitted_data$diff, predicteds=RWfit_ResPred))
+  head(RWfit_actuals_preds_resd)
+  correlation_accuracy <- cor(RWfit_actuals_preds_resd)
+  
+  
+  RWfit_Final_Pred <- data.frame(cbind(RWfit_Fitted_data,RWfit_ResPred))#
+  head(RWfit_Final_Pred)
+  
+  
+  RWfit_Final_Pred$Regr_Predictions <- RWfit_Final_Pred$RWfit_Fitted + round(RWfit_Final_Pred$RWfit_ResPred)
+  #
+  RWfit_Comp_predictions <- data.frame(cbind(RWfit_Final_Pred$Tdate, RWfit_Final_Pred$No_of_Tickets, RWfit_Final_Pred$RWfit_Fitted,RWfit_Final_Pred$Regr_Predictions ))
+  #
+  RWfit_Comp_predictions$RWfit_Final_Pred.Tdate <- as.Date(RWfit_Comp_predictions$RWfit_Final_Pred.Tdate, origin="01-01-1970")
+  
+  head(RWfit_Comp_predictions)
+  #
+  ErrorRatio <- abs((RWfit_Comp_predictions$RWfit_Final_Pred.No_of_Tickets - RWfit_Comp_predictions$RWfit_Final_Pred.Regr_Predictions )/RWfit_Comp_predictions$RWfit_Final_Pred.No_of_Tickets )
+  RWfit_Mape<-mean(ErrorRatio, na.rm = TRUE)*100
+  RWfit_Mape
+  
+  
+  ###########################################################
+  ######################## FUTURE FORECASTED VALUES
+  
+  RWfit_Future <- round(forecast(RWfit, h=30)$mean)
+  head(RWfit_Future)
+  
+  
+  
+  RWfit_Future_data<-data.frame(RWfit_Future,RawData_1=1:30,RawData_2=30:1,RawData_3=0,RawData_4=0,RawData_5=0)
+  
+  RWfit_ResFut <- predict(RWfit_linearMod,RWfit_Future_data )#
+  round(RWfit_ResFut)
+  RWfit_Future_Final <- round(RWfit_Future + RWfit_ResFut)
+  RWfit_Future_Final
+  
+  ####################
+  #################################################
+
+  #######################
+  ###4. STL+Arima(2,0,2)
+  
+  SArfit<- stlm(tsData, modelfunction=Arima, order=c(2,0,2))
+  SArfit_fcast <- forecast(SArfit, method="arima")
+  stlArimaAccuracy <- accuracy(SArfit_fcast)
+  
+  SArfit_fitted <- round(forecast(SArfit, method="arima",h=(dim(trainSet)[1]))$fitted)
+  stlArimaAccuracy <- accuracy(forecast(SArfit, method="arima",h=(dim(trainSet)[1])))
+  
+  
+  #
+  SArfit_fitted_data<-data.frame(trainSet[1:length (SArfit_fitted),],SArfit_fitted)
+  
+  SArfit_fitted_data$diff <- (SArfit_fitted_data$No_of_Tickets) - (round( SArfit_fitted_data$SArfit_fitted))
+  
+  
+  ####### STL+Arima(2,0,2) Linear Equation
+  #########################
+  dependent<-c('diff')
+  
+  Independent<-c('RawData_1','RawData_2','RawData_3','RawData_4','RawData_5')
+  eqn<-paste(Independent,collapse=' + ')
+  
+  Equation <- as.formula( paste(dependent,'~',eqn ))
+  
+  SArfit_linearMod <- lm(Equation, data=SArfit_fitted_data)# 
+  print(SArfit_linearMod)
+  summary(SArfit_linearMod)
+  
+  SArfit_ResPred <- round(predict(SArfit_linearMod, SArfit_fitted_data))#
+  
+  #
+  SArfit_actuals_preds_resd <- data.frame(cbind(actuals=SArfit_fitted_data$diff, predicteds=SArfit_ResPred))
+  head(SArfit_actuals_preds_resd)
+  correlation_accuracy <- cor(SArfit_actuals_preds_resd)
+  
+  
+  SArfit_Final_Pred <- data.frame(cbind(SArfit_fitted_data,SArfit_ResPred))#
+  head(SArfit_Final_Pred)
+  
+  
+  SArfit_Final_Pred$Regr_Predictions <- SArfit_Final_Pred$SArfit_fitted + round(SArfit_Final_Pred$SArfit_ResPred)
+  #
+  SArfit_Comp_predictions <- data.frame(cbind(SArfit_Final_Pred$Tdate, SArfit_Final_Pred$No_of_Tickets, SArfit_Final_Pred$SArfit_fitted,SArfit_Final_Pred$Regr_Predictions ))
+  #
+  SArfit_Comp_predictions$SArfit_Final_Pred.Tdate <- as.Date(SArfit_Comp_predictions$SArfit_Final_Pred.Tdate,origin="1970-01-01")
+  
+  head(SArfit_Comp_predictions)
+  #
+  ErrorRatio <- abs((SArfit_Comp_predictions$SArfit_Final_Pred.No_of_Tickets - SArfit_Comp_predictions$SArfit_Final_Pred.Regr_Predictions )/SArfit_Comp_predictions$SArfit_Final_Pred.No_of_Tickets )
+  SArfit_Mape<-mean(ErrorRatio, na.rm = TRUE)*100
+  SArfit_Mape
+  
+  ###########################################################
+  ######################## FUTURE FORECASTED VALUES
+  
+  SArfit_Future <- round(forecast(SArfit, h=30)$mean)
+  head(SArfit_Future)
+  
+  
+  
+  SArfit_Future_data<-data.frame(SArfit_Future,RawData_1=1:30,RawData_2=30:1,RawData_3=0,RawData_4=0,RawData_5=0)
+  
+  SArfit_ResFut <- predict(RWfit_linearMod,SArfit_Future_data )#
+  round(SArfit_ResFut)
+  SArfit_Future_Final <- round(SArfit_Future + SArfit_ResFut)
+  SArfit_Future_Final
+  
+  ####################
+  #################################################
+
+###########################
+  
+  #######################
+  ###5. STL+ets
+  SETSfit <- stlm(tsData, s.window="periodic",robust=TRUE)
+  SETS_fitted <- round(forecast(SETSfit, method="ets",h=(dim(trainSet)[1]))$fitted)
+  stletsAccuracy <- accuracy(forecast(SETSfit, method="ets",h=(dim(trainSet)[1])))
+  
+  
+  #
+  SETS_fitted_data<-data.frame(trainSet[1:length (SETS_fitted),],SETS_fitted)
+  
+  SETS_fitted_data$diff <- (SETS_fitted_data$No_of_Tickets) - (round( SETS_fitted_data$SETS_fitted))
+  
+  
+  ####### STL+ets Linear Equation
+  #########################
+  dependent<-c('diff')
+  
+  Independent<-c('RawData_1','RawData_2','RawData_3','RawData_4','RawData_5')
+  eqn<-paste(Independent,collapse=' + ')
+  
+  Equation <- as.formula( paste(dependent,'~',eqn ))
+  
+  SETSfit_linearMod <- lm(Equation, data=SETS_fitted_data)# 
+  print(SETSfit_linearMod)
+  summary(SETSfit_linearMod)
+  
+  SETSfit_ResPred <- round(predict(SETSfit_linearMod, SETS_fitted_data))#
+  
+  #
+  SETSfit_actuals_preds_resd <- data.frame(cbind(actuals=SETS_fitted_data$diff, predicteds=SETSfit_ResPred))
+  head(SETSfit_actuals_preds_resd)
+  correlation_accuracy <- cor(SETSfit_actuals_preds_resd)
+  
+  
+  SETSfit_Final_Pred <- data.frame(cbind(SETS_fitted_data,SETSfit_ResPred))#
+  head(SETSfit_Final_Pred)
+  
+  
+  SETSfit_Final_Pred$Regr_Predictions <- SETSfit_Final_Pred$SETS_fitted + round(SETSfit_Final_Pred$SETSfit_ResPred)
+  #
+  SETSfit_Comp_predictions <- data.frame(cbind(SETSfit_Final_Pred$Tdate, SETSfit_Final_Pred$No_of_Tickets, SETSfit_Final_Pred$SETS_fitted,SETSfit_Final_Pred$Regr_Predictions ))
+  #
+  SETSfit_Comp_predictions$SETSfit_Final_Pred.Tdate <- as.Date( SETSfit_Comp_predictions$SETSfit_Final_Pred.Tdate)
+  
+  head(SETSfit_Comp_predictions)
+  #
+  ErrorRatio <- abs((SETSfit_Comp_predictions$SETSfit_Final_Pred.No_of_Tickets - SETSfit_Comp_predictions$SETSfit_Final_Pred.Regr_Predictions )/SETSfit_Comp_predictions$SETSfit_Final_Pred.No_of_Tickets )
+  SETSfit_Mape<-mean(ErrorRatio, na.rm = TRUE)*100
+  SETSfit_Mape
+  
+  #plot(fcast)
+  
+  ###########################################################
+  ######################## FUTURE FORECASTED VALUES
+  
+  SETS_Future <- round(forecast(SETSfit, h=30)$mean)
+  head(SETS_Future)
+  
+  
+  
+  SETS_Future_data<-data.frame(SETS_Future,RawData_1=1:30,RawData_2=30:1,RawData_3=0,RawData_4=0,RawData_5=0)
+  
+  SETS_ResFut <- predict(RWfit_linearMod,SETS_Future_data )#
+  round(SETS_ResFut)
+  SETS_Future_Final <- round(SETS_Future + SETS_ResFut)
+  SETS_Future_Final
+  
+  ####################
+  #################################################
+
+
+##############################################################
+####6. Holt-Winters Exponential Smoothing (additive)
+logData <- log(tsData)
+round(exp(logData))
+#?HoltWinters
+
+logDatafit <- stats::HoltWinters(logData, seasonal = c("additive"))
+
+logDataforecasts2 <- (forecast(logDatafit,h=(dim(trainSet)[1]))$fitted )
+HW_fitted<- round(exp(logDataforecasts2))                   
+
+
+HWAdditiveAccuracy <- accuracy(forecast(logDatafit,h=(dim(trainSet)[1])))
+autoplot(forecast(logDatafit,h=(dim(trainSet)[1])))
+
+
+
+#
+HW_fitted_data<-data.frame(trainSet[1:length (HW_fitted),],HW_fitted)
+
+HW_fitted_data$diff <- (HW_fitted_data$No_of_Tickets) - (round( HW_fitted_data$HW_fitted))
+
+
+####### Holt-Winters Exponential Smoothing (additive) Linear Equation
+#########################
+dependent<-c('diff')
+
+Independent<-c('RawData_1','RawData_2','RawData_3','RawData_4','RawData_5')
+eqn<-paste(Independent,collapse=' + ')
+
+Equation <- as.formula( paste(dependent,'~',eqn ))
+
+HWfit_linearMod <- lm(Equation, data=HW_fitted_data)# 
+print(HWfit_linearMod)
+summary(HWfit_linearMod)
+
+HWfit_ResPred <- round(predict(HWfit_linearMod, HW_fitted_data ))#
+
+#
+HWfit_actuals_preds_resd <- data.frame(cbind(actuals=HW_fitted_data$diff, predicteds=HWfit_ResPred))
+head(HWfit_actuals_preds_resd)
+correlation_accuracy <- cor(HWfit_actuals_preds_resd)
+
+
+HWfit_Final_Pred <- data.frame(cbind(HW_fitted_data,HWfit_ResPred))#
+head(HWfit_Final_Pred)
+
+
+HWfit_Final_Pred$Regr_Predictions <- HWfit_Final_Pred$HW_fitted + round(HWfit_Final_Pred$HWfit_ResPred)
+#
+HWfit_Comp_predictions <- data.frame(cbind(HWfit_Final_Pred$Tdate, HWfit_Final_Pred$No_of_Tickets, HWfit_Final_Pred$HW_fitted,HWfit_Final_Pred$Regr_Predictions ))
+#
+HWfit_Comp_predictions$HWfit_Final_Pred.Tdate <- as.Date(HWfit_Comp_predictions$HWfit_Final_Pred.Tdate,origin="1970-01-01")
+
+tail(HWfit_Comp_predictions)
+#
+ErrorRatio <- abs((HWfit_Comp_predictions$HWfit_Final_Pred.No_of_Tickets - HWfit_Comp_predictions$HWfit_Final_Pred.Regr_Predictions )/HWfit_Comp_predictions$HWfit_Final_Pred.No_of_Tickets )
+HWfit_Mape<-mean(ErrorRatio, na.rm = TRUE)*100
+HWfit_Mape
+###########################################################
+######################## FUTURE FORECASTED VALUES
+
+HW_Future <- (forecast(logDatafit, h=30)$mean)
+HW_Future <- round(exp(HW_Future))
+head(HW_Future)
+
+
+
+HW_Future_data<-data.frame(HW_Future,RawData_1=1:30,RawData_2=30:1,RawData_3=0,RawData_4=0,RawData_5=0)
+
+HW_ResFut <- predict(RWfit_linearMod,HW_Future_data )#
+round(HW_ResFut)
+HW_Future_Final <- round(HW_Future + HW_ResFut)
+HW_Future_Final
+
+####################
+#################################################
+
+#### Holt-Winters Exponential Smoothing (Multiplicative)
+###tsData = ts(trainSet[2:dim(trainSet)[1],2],start=c(2017,11),frequency=7)
+##### Holts-Winter  multi model is giving the following error: "data must be non-zero for multiplicative Holt-Winters"
+# MultData <- log(tsData)
+# MultDataforecasts <- stats::HoltWinters(MultData,seasonal = "mult")
+# 
+# MultDataforecasts
+# MultDataforecasts$SSE
+# #plot(MultDataforecasts)
+# MultDataforecasts2 <- forecast(MultDataforecasts, h=24)
+# HWMultiplicativeAccuracy <- accuracy(MultDataforecasts2)
+
+## OVERALL Accuracy
+Acc<-rbind(AutoARIMA_Mape,ARIMA_Mape,RWfit_Mape,SArfit_Mape,SETSfit_Mape,HWfit_Mape)
+Pred<- rbind(Autoarima_Future_Final[1:10],Arima_Future_Final[1:10],RWfit_Future_Final[1:10],SArfit_Future_Final[1:10],SETS_Future_Final[1:10],HW_Future_Final[1:10])
+Model<-c("AutoArima","ARIMA","RandomWalk","STL+ARIMA","STL+ets","Holts-Winter (A)")
+rownames(Acc)<- Model
+
+colnames(Pred)<- c('Day_1','Day_2','Day_3','Day_4','Day_5','Day_6','Day_7','Day_8','Day_9','Day_10')
+ModelData<-data.frame(MAPE=Acc[,1],Pred )
+ModelData
+modelIdentification<-data.frame(Model_Selected=('is Best Model'),ModelData[ ModelData$MAPE==min(ModelData$MAPE),])
+modelIdentification
+}
+
+
+
+#modelIdentification<-ModelData[1]
+##### Linear Model
+#fitARIMA<-arima(tsData, order=c(1,0,2),method="ML")
+# Final_Predictions<-round( predict(fitAutoArima,n.ahead=dim(trainSet)[1])$pred)
+# Pred_data<-data.frame(trainSet,Final_Predictions)
+# Pred_data$diff <- (Pred_data$No_of_Tickets) - (round( Pred_data$Final_Predictions))
+# 
+# str(Pred_data)
+
+
+#### Linear Regression fitting of Resediuals (Differences in predictions) to increase the accuracy
+# dependent<-c('diff')
+# 
+# Independent<-c('RawData_1','RawData_2','RawData_3','RawData_4','RawData_5')
+# eqn<-paste(Independent,collapse=' + ')
+# 
+# Equation <- as.formula( paste(dependent,'~',eqn ))
+# 
+# linearMod <- lm(Equation, data=Pred_data) 
+# print(linearMod)
+# summary(linearMod)
+# 
+# ResPred <- predict(linearMod, Pred_data)
+# 
+# actuals_preds <- data.frame(cbind(actuals=Pred_data$diff, predicteds=ResPred))
+# correlation_accuracy <- cor(actuals_preds)
+# head(actuals_preds)
+# 
+# Pred <- data.frame(cbind(Pred_data,ResPred))
+# Pred$Regr_Predictions <- Pred$Final_Predictions + round(Pred$ResPred)
+# 
+# Comp_predictions <- data.frame(cbind(Pred$Tdate, Pred$No_of_Tickets, Pred$Final_Predictions,Pred$Regr_Predictions ))
+# 
+# Comp_predictions$Pred.Tdate<- as.Date( Comp_predictions$Pred.Tdate)
+# 
+# head(Comp_predictions)
+# 
+# Mape<-mean(abs((Comp_predictions$Pred.No_of_Tickets- Comp_predictions$Pred.Regr_Predictions)/Comp_predictions$Pred.No_of_Tickets))*100
+# Mape
+write.csv(ModelData,'Predictions.csv')
+
+
+
