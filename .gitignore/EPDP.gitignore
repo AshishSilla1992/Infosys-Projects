@@ -15,6 +15,16 @@ _book
 *.mobi
 *.pdf
 
+EPDP Dashboard Overview:
+•	Enterprise Product Development Process (EPDP) Dashboard is to aid the Construction and Forestry division in understand 
+new product program schedule and overall health of part level PDP development.  This will likely be their replacement for the 
+current Design Engineering and PLPDP Process Performance Lumira storyboards. 
+•	Part States:
+ 
+
+
+
+
 ------------------------------Project Overview-----------------Project Overview-------------------------Project Overview------------------------
 /*********CA_PDMLINK(ProjectOverview:Part number count,breakdown of global part(PiChart);Milestone11:Part Status (H StackedBar),Part Status(Numeric)) ******/
 
