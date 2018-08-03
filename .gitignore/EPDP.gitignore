@@ -1,0 +1,504 @@
+# Node rules:
+## Grunt intermediate storage (http://gruntjs.com/creating-plugins#storing-task-files)
+.grunt
+
+## Dependency directory
+## Commenting this out is preferred by some people, see
+## https://docs.npmjs.com/misc/faq#should-i-check-my-node_modules-folder-into-git
+node_modules
+
+# Book build output
+_book
+
+# eBook build output
+*.epub
+*.mobi
+*.pdf
+
+------------------------------Project Overview-----------------Project Overview-------------------------Project Overview------------------------
+/*********CA_PDMLINK(ProjectOverview:Part number count,breakdown of global part(PiChart);Milestone11:Part Status (H StackedBar),Part Status(Numeric)) ******/
+
+SELECT 
+"deere_pdm_analytics_model__CA_PDMLINK"."ECN_FIRST_6_DIGIT" AS "ECN First 6 Digit",
+"deere_pdm_analytics_model__CA_PDMLINK"."2_DIGIT_UNIT_CODE" AS "2 Digit Unit Code",
+"deere_pdm_analytics_model__CA_PDMLINK"."LATEST_REV_IND" AS "Latest Revision Indicator",
+"deere_pdm_analytics_model__CA_PDMLINK"."PART_NUMBER" AS "Part Number",
+"deere_pdm_analytics_model__CA_PDMLINK"."PART_NUMBER_COUNT" AS "Part Number Count",
+"STATE_CUSTOM_SORT" As "Part State Custom Sort 2",
+"PART_STATE" As "Part State",
+"REVISION" As "Revision",
+"deere_pdm_analytics_model__CA_PDMLINK"."PDM_PART_TYPE" AS "PDM Part Type"
+  
+FROM "deere.pdm.analytics.model::CA_PDMLINK"  "deere_pdm_analytics_model__CA_PDMLINK"
+WHERE 
+"deere_pdm_analytics_model__CA_PDMLINK"."2_DIGIT_UNIT_CODE" IN ('EG','YT') AND
+
+ECN_PROJECT = <Parameters.ECM Project (Parameter)>
+
+****************************************************************************************************************************
+
+/**************************CA_ECM_MTRL_LOCAL (Project Overview: Procurement by Local Factory, Parts offered for service)***********************/
+
+SELECT 
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."2_DIGIT_UNIT_CODE" AS "2 Digit Unit Code",
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."ECM_FIRST_6_DIGITS" AS "ECM First 6 Digits",
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."ZZACTION_TEXT" AS "ECM Object Description Text",
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."LAT_LOCAL_REV" AS "Latest Local Rev Row Revision by Material/ECM Project Indicator",
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."LOCAL_SERVICE_INDICATOR" AS "Local Service Indicator",
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."LOCAL_PROCUREMENT" AS "Local Procurement",
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."MATERIAL_NUMBER_MS" AS "Material",
+"PLANT" AS "Plant",
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."MATERIAL_NUMBER" AS "Material (2)",  
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."PDM_PART_TYPE" AS "PDM Part Type" 
+  
+FROM "deere.pdm.analytics.model::CA_ECM_MTRL_LOCAL"  "deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"
+WHERE 
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."2_DIGIT_UNIT_CODE" IN ('BZ', 'DW', 'EJ', 'F3', 'F6', 'F9', 'TX', 'WA', 'WJ', 'YN') AND
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."LAT_LOCAL_REV" = 'X'AND
+ECM_PROJECT = <Parameters.ECM Project (Parameter)>
+
+****************************************************************************************************************************
+
+/**************************CA_WORKFLOW_2 ( Project Overview: Break Down of QPLs)***********************/
+
+SELECT 
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."2_DIGIT_UNIT_CODE" AS "2 Digit Unit Code",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."ECR_NO" AS "PLPDP ECR Number",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_BUILD_TYPE" AS "PLPDP Build Type",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_PROJECT_PLAN_TYPE" AS "PLPDP Global/Local/Quality",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."ECM_PROJECT" AS "ECM Project",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."MATERIAL" AS "Material",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_PHASE_SYSTEM_STATUS" AS "PLPDP Phase System Status",
+PLPDP_TASK_NAME As "Task Name",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."QPL_CALC_PROJ" AS "PLPDP QPL"
+  
+FROM "deere.pdm.analytics.model::CA_WORKFLOW_2"  "deere_pdm_analytics_model__CA_WORKFLOW_2"
+WHERE 	"deere_pdm_analytics_model__CA_WORKFLOW_2"."2_DIGIT_UNIT_CODE" IN ('BZ', 'DW', 'EJ', 'F3', 'F6', 'F9', 'TX', 'WA', 'WJ', 'YN') AND
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_PROJECT_PLAN_TYPE" IN ('Q')AND
+ECM_PROJECT = <Parameters.ECM Project (Parameter)>
+
+****************************************************************************************************************************
+
+
+------------------------------Workflow Status-----------------Workflow Status-------------------------Workflow Status------------------------
+/********************************************CA_WORKFLOW_2 (Tasks By Role barchart)*****************************************/
+/*Used UNION because
+We need to Remove “Release” tasks (Mentioned below) only for 'Design Engineer' =>Exclude:
+			Release for Experimental Procurement 2
+			Complete Geometry Changes
+			Complete Geometry Changes/EBOM
+			Release for Tooling
+*/
+
+
+SELECT 
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."2_DIGIT_UNIT_CODE" AS "2 Digit Unit Code",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."RECORD_COUNT" AS "Record Count",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."ECM_PROJECT" AS "ECM Project",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."MATERIAL" AS "Material",
+"PLPDP_TASK_RESPONSIBLE_PERSON_ROLE" AS "PLPDP Task Role Type Name",
+"PLPDP_TASK_NAME" AS "PLPDP Task Name",
+"PLPDP_Task_Status_2" AS "PLPDP Task Status (Calculated)",
+"PLPDP_Task_Above_Below_Expected_Duration" AS "PLPDP Task Above or Below Expected Duration",
+PLPDP_PHASE_NAME_GROUP AS "PLPDP Phase Name",
+PLPDP_PHASE_TYPE_TEXT As "PLPDP Phase Name Group",
+PLPDP_TASK_ALL_STATUSES As "PLPDP Task Statuses All"
+  
+FROM "deere.pdm.analytics.model::CA_WORKFLOW_2"  "deere_pdm_analytics_model__CA_WORKFLOW_2"
+WHERE 	"deere_pdm_analytics_model__CA_WORKFLOW_2"."2_DIGIT_UNIT_CODE" IN ('BZ', 'DW', 'EJ', 'F3', 'F6', 'F9', 'TX', 'WA', 'WJ', 'YN','YT','EG') 
+AND PLPDP_PHASE_TYPE_TEXT NOT IN ('Canceled Phase', 'Cancelled Pending Phase', 'Completed Phase', 'Implement Phase')
+AND PLPDP_PHASE_NAME_GROUP NOT IN ('VERIFY_40_WAIT',	'VERIFY_40_WAIT_OLD',	'VERIFY_45',	'VERIFY_50',	'VERIFY_50_WAIT',	'VERIFY_50_WAIT_OLD',	'VERIFY_51',	'VERIFY_55',	'Verify_55',	'VERIFY_55_WAIT',	'VERIFY_56',	'VERIFY_60',	'VERIFY_65',	'VERIFY_65_OLD',	'VERIFY_70',	'VERIFY_75',	'VERIFY_80',	'VERIFY_80_WAIT',	'VERIFY_85',	'VERIFY_87',	'VERIFY_90',	'VERIFY_95',	'VERIFY_100',	'VERIFY_100_WAIT')
+AND PLPDP_TASK_RESPONSIBLE_PERSON_ROLE IN ('Local Quality Engineer','Manufacturing Engineer','Supply Management Specialist')
+AND "PLPDP_Task_Status_2" = 'Released'
+AND PLPDP_TASK_ALL_STATUSES NOT IN ('Released-Waiting')
+AND ECM_PROJECT = <Parameters.ECM Project (Parameter)>
+
+UNION ALL
+
+SELECT 
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."2_DIGIT_UNIT_CODE" AS "2 Digit Unit Code",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."RECORD_COUNT" AS "Record Count",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."ECM_PROJECT" AS "ECM Project",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."MATERIAL" AS "Material",
+"PLPDP_TASK_RESPONSIBLE_PERSON_ROLE" AS "PLPDP Task Role Type Name",
+"PLPDP_TASK_NAME" AS "PLPDP Task Name",
+"PLPDP_Task_Status_2" AS "PLPDP Task Status (Calculated)",
+"PLPDP_Task_Above_Below_Expected_Duration" AS "PLPDP Task Above or Below Expected Duration",
+PLPDP_PHASE_NAME_GROUP AS "PLPDP Phase Name",
+PLPDP_PHASE_TYPE_TEXT As "PLPDP Phase Name Group",
+PLPDP_TASK_ALL_STATUSES As "PLPDP Task Statuses All"
+  
+FROM "deere.pdm.analytics.model::CA_WORKFLOW_2"  "deere_pdm_analytics_model__CA_WORKFLOW_2"
+WHERE 	"deere_pdm_analytics_model__CA_WORKFLOW_2"."2_DIGIT_UNIT_CODE" IN ('BZ', 'DW', 'EJ', 'F3', 'F6', 'F9', 'TX', 'WA', 'WJ', 'YN','YT','EG') 
+AND PLPDP_PHASE_TYPE_TEXT NOT IN ('Canceled Phase', 'Cancelled Pending Phase', 'Completed Phase', 'Implement Phase')
+AND PLPDP_PHASE_NAME_GROUP NOT IN ('VERIFY_40_WAIT',	'VERIFY_40_WAIT_OLD',	'VERIFY_45',	'VERIFY_50',	'VERIFY_50_WAIT',	'VERIFY_50_WAIT_OLD',	'VERIFY_51',	'VERIFY_55',	'Verify_55',	'VERIFY_55_WAIT',	'VERIFY_56',	'VERIFY_60',	'VERIFY_65',	'VERIFY_65_OLD',	'VERIFY_70',	'VERIFY_75',	'VERIFY_80',	'VERIFY_80_WAIT',	'VERIFY_85',	'VERIFY_87',	'VERIFY_90',	'VERIFY_95',	'VERIFY_100',	'VERIFY_100_WAIT')
+AND "PLPDP_Task_Status_2" = 'Released'
+AND PLPDP_TASK_ALL_STATUSES NOT IN ('Released-Waiting')
+AND ECM_PROJECT = <Parameters.ECM Project (Parameter)>
+AND "PLPDP_TASK_RESPONSIBLE_PERSON_ROLE" = 'Design Engineer'
+AND "PLPDP_TASK_NAME" NOT IN ('Complete Geometry Changes','Complete Geometry Changes/EBOM','Release for experimental procurement 2','Release for Tooling')
+
+****************************************************************************************************************************
+
+/*************************************CA_WORKFLOW_2 + CA_MIS_LOCAL(Work Status: Quality )******************************************/
+
+SELECT 
+  "deere_pdm_analytics_model__CA_WORKFLOW_2"."2_DIGIT_UNIT_CODE" AS "2 Digit Unit Code",
+"MATERIAL_COUNT" As "Material Count",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."ECR_NO" AS "PLPDP ECR Number",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."ECM_Digit" AS "PLPDP ECM Digit (6)",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."DIR_REVISION" AS "DIR Revision",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."ECM_PROJECT" AS "ECM Project",
+  "deere_pdm_analytics_model__CA_WORKFLOW_2"."MATERIAL" AS "Material",
+  "deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_PHASE_SYSTEM_STATUS" AS "PLPDP Phase System Status",
+  "deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_TASK_FINISH_DATE" AS "PLPDP Task Finish Date",
+  "deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_TASK_ACTIVE_SCHEDULE" AS "PLPDP Task Active Schedule",
+  "deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_Task_Status_2" AS "PLPDP Task Status (Calculated)",
+  "deere_pdm_analytics_model__CA_WORKFLOW_2"."RECORD_COUNT" AS "Record Count",
+  
+  "deere_pdm_analytics_model__CA_WORKFLOW_2"."QPL_CALC_PROJ" AS "PLPDP QPL"
+  
+  
+FROM "deere.pdm.analytics.model::CA_WORKFLOW_2"  "deere_pdm_analytics_model__CA_WORKFLOW_2"
+WHERE 		
+PLPDP_PROJECT_SYSTEM_STATUS = 'Released' AND
+PLPDP_PHASE_SYSTEM_STATUS IN ('Released', 'Created') AND
+  "deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_Task_Status_2"  IN ('Released', 'Created') AND
+PLPDP_TASK_NAME IN ('Release for experimental procurement 2', 'Complete Geometry Changes', 'Complete Geometry Changes/EBOM', 'Release for Tooling')AND
+ECM_PROJECT = <Parameters.ECM Project (Parameter)>
+
+/*LEFT JOIN*/
+
+SELECT 
+  "CA_MIS_LOCAL"."ECM_FIRST_6_DIGITS" AS "ECM First 6 Digits",
+  "CA_MIS_LOCAL"."MATERIAL" AS "Material",
+  "CA_MIS_LOCAL"."Change_Level_Indicator" AS "MIS Change Level Latest",
+  "CA_MIS_LOCAL"."Revision_Level_Indicator" AS "MIS Latest Revision by Material/ECM Project Indicator",
+  "CA_MIS_LOCAL"."REVLVL" AS "MIS Revision Level",
+  "CA_MIS_LOCAL"."RECORD_COUNT" AS "Record Count",
+  "CA_MIS_LOCAL"."Planned_Lead_Time_Value" AS "Planned Lead Time Value"
+FROM "_SYS_BIC"."deere.pdm.analytics.model/CA_MIS_LOCAL"  "CA_MIS_LOCAL"
+WHERE 
+  "CA_MIS_LOCAL"."Revision_Level_Indicator" = 'X' AND
+  "CA_MIS_LOCAL"."Change_Level_Indicator" = 'X'
+
+****************************************************************************************************************************
+
+/*****************************CA_WORKFLOW_2 (Work Status: Created & Released by Planned Finish Date, Crosstabs both )*******************************/
+
+SELECT 
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."2_DIGIT_UNIT_CODE" AS "2 Digit Unit Code",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."ECR_NO" AS "PLPDP ECR Number",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."ECM_Digit" AS "PLPDP ECM Digit (6)",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."DIR_REVISION" AS "DIR Revision",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."ECM_PROJECT" AS "ECM Project",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."MATERIAL" AS "Material",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_PHASE_SYSTEM_STATUS" AS "PLPDP Phase System Status",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_PHASE_PLANNED_FINISH_DATE" AS "PLPDP Phase Planned Finish Date",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_TASK_FINISH_DATE" AS "PLPDP Task Finish Date",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_TASK_ACTIVE_SCHEDULE" AS "PLPDP Task Active Schedule",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_Task_Status_2" AS "PLPDP Task Status (Calculated)",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."RECORD_COUNT" AS "Record Count",
+"PLPDP_TASK_HISTORICAL_SCHEDULE" AS "PLPDP Task Historical Schedule",
+"PLPDP_TASK_NAME" AS "PLPDP Task Name",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."QPL_CALC_PROJ" AS "PLPDP QPL"
+  
+FROM "deere.pdm.analytics.model::CA_WORKFLOW_2"  "deere_pdm_analytics_model__CA_WORKFLOW_2"
+WHERE 		
+PLPDP_PROJECT_SYSTEM_STATUS = 'Released' AND
+PLPDP_PHASE_SYSTEM_STATUS IN ('Released', 'Created') AND
+  "deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_Task_Status_2"  IN ('Released', 'Created') AND
+PLPDP_TASK_NAME IN ('Release for experimental procurement 2', 'Complete Geometry Changes', 'Complete Geometry Changes/EBOM', 'Release for Tooling')AND
+PLPDP_TASK_RESPONSIBLE_PERSON_ROLE NOT IN ('Copy Task Type 1', 'Copy Task Type 2','Copy Task Type 3','Copy Task Type 4','Administrator', 'Using Unit Notification')AND
+PLPDP_TASK_RESPONSIBLE_PERSON_ROLE is NOT NULL and
+ECM_PROJECT = <Parameters.ECM Project (Parameter)>
+
+/*LEFT JOIN*/
+
+SELECT 
+"2_DIGIT_UNIT_CODE" AS "2_DIGIT_UNIT_CODE",
+"ECR" AS "PLPDP ECR Number",
+"BUILDDATE_CALC" As "D1 Build Start/MRD"
+		FROM "_SYS_BIC"."deere.pdm.analytics.model/CA_LTP_BUILD_DATES" 
+		WHERE "BUILD"  = ('D1')
+		
+*LEFT JOIN*
+
+SELECT 
+"2_DIGIT_UNIT_CODE" AS "2_DIGIT_UNIT_CODE",
+"ECR" AS "PLPDP ECR Number",
+"BUILDDATE_CALC" As "D2 Build Start/MRD"
+		FROM "_SYS_BIC"."deere.pdm.analytics.model/CA_LTP_BUILD_DATES" 
+		WHERE "BUILD"  = ('D2')
+
+****************************************************************************************************************************
+
+
+------------------------------Milestone 11-----------------------Milestone 11-------------------------Milestone 11------------------------
+/*********CA_PDMLINK(ProjectOverview:Part number count,breakdown of global part(PiChart);Milestone11:Part Status (H StackedBar),Part Status(Numeric)) ******/
+
+SELECT 
+"deere_pdm_analytics_model__CA_PDMLINK"."ECN_FIRST_6_DIGIT" AS "ECN First 6 Digit",
+"deere_pdm_analytics_model__CA_PDMLINK"."2_DIGIT_UNIT_CODE" AS "2 Digit Unit Code",
+"deere_pdm_analytics_model__CA_PDMLINK"."LATEST_REV_IND" AS "Latest Revision Indicator",
+"deere_pdm_analytics_model__CA_PDMLINK"."PART_NUMBER" AS "Part Number",
+"deere_pdm_analytics_model__CA_PDMLINK"."PART_NUMBER_COUNT" AS "Part Number Count",
+"STATE_CUSTOM_SORT" As "Part State Custom Sort 2",
+"PART_STATE" As "Part State",
+"REVISION" As "Revision",
+"deere_pdm_analytics_model__CA_PDMLINK"."PDM_PART_TYPE" AS "PDM Part Type"
+  
+FROM "deere.pdm.analytics.model::CA_PDMLINK"  "deere_pdm_analytics_model__CA_PDMLINK"
+WHERE 
+"deere_pdm_analytics_model__CA_PDMLINK"."2_DIGIT_UNIT_CODE" IN ('EG','YT') AND
+
+ECN_PROJECT = <Parameters.ECM Project (Parameter)>
+
+****************************************************************************************************************************
+
+/***********************CA_ECM_MTRL_LOCAL: (Milestone 11: Part Status (Cross tab 2))**********************************************/
+
+SELECT 
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."2_DIGIT_UNIT_CODE" AS "2 Digit Unit Code",
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."ECM_FIRST_6_DIGITS" AS "ECM First 6 Digits",
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."ZZACTION_TEXT" AS "ECM Object Description Text",
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."LAT_LOCAL_REV" AS "Latest Local Rev Row Revision by Material/ECM Project Indicator",
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."LOCAL_SERVICE_INDICATOR" AS "Local Service Indicator",
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."LOCAL_PROCUREMENT" AS "Local Procurement",
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."MATERIAL_NUMBER_MS" AS "Material",
+"PLANT" AS "Plant",
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."MATERIAL_NUMBER" AS "Material (2)",  
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."PDM_PART_TYPE" AS "PDM Part Type" 
+  
+FROM "deere.pdm.analytics.model::CA_ECM_MTRL_LOCAL"  "deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"
+WHERE 
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."2_DIGIT_UNIT_CODE" IN ('BZ', 'DW', 'EJ', 'F3', 'F6', 'F9', 'TX', 'WA', 'WJ', 'YN') AND
+"deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."LAT_LOCAL_REV" = 'X'AND
+ECM_PROJECT = <Parameters.ECM Project (Parameter)>
+
+***********************************************************************************************************************************
+
+/*****************************CA_WORKFLOW_2 (Milestone 11: Part On Time Promotion (Stacked bar))****************************************/
+/*Here, for each 'Part Number' there will be multiple 'Revisions', but we need to only count the records of part numbers that has the latest 'Revision' value*/
+
+SELECT 
+*
+FROM 
+	(SELECT 
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."2_DIGIT_UNIT_CODE" AS "2 Digit Unit Code",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."ECR_NO" AS "PLPDP ECR Number",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."ECM_Digit" AS "PLPDP ECM Digit (6)",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."DIR_REVISION" AS "DIR Revision",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."ECM_PROJECT" AS "ECM Project",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."MATERIAL" AS "Material",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_PHASE_SYSTEM_STATUS" AS "PLPDP Phase System Status",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_TASK_FINISH_DATE" AS "PLPDP Task Finish Date",
+	"PLPDP_TASK_ACTUAL_FINISH_DATE" As "PLPDP Task Actual Finish Date",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_TASK_ACTIVE_SCHEDULE" AS "PLPDP Task Active Schedule",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_Task_Status_2" AS "PLPDP Task Status (Calculated)",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."RECORD_COUNT" AS "Record Count",
+	"PLPDP_TASK_HISTORICAL_SCHEDULE" AS "PLPDP Task Historical Schedule",
+	"PLPDP_TASK_NAME" AS "PLPDP Task Name",  
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."QPL_CALC_PROJ" AS "PLPDP QPL", 
+	ROW_NUMBER() Over(PARTITION BY "MATERIAL" ORDER BY "DIR_REVISION" DESC) AS "Filtered" 
+
+	  FROM "deere.pdm.analytics.model::CA_WORKFLOW_2"  "deere_pdm_analytics_model__CA_WORKFLOW_2"
+	  WHERE 
+		"PLPDP_Task_Status_2"  IN ('Released', 'Created', 'Completed') AND
+		"PLPDP_TASK_NAME" IN ('Release for experimental procurement 2')
+	AND
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."ECM_PROJECT" = <Parameters.ECM Project (Parameter)>
+	) Ranks
+WHERE
+"Filtered" = 1
+
+***********************************************************************************************************************************
+
+/*******************CA_WORKFLOW_2 (Column Chart for delinquency )*****************************************************************/
+/*Same as Above*/
+
+SELECT * 
+FROM 
+	(SELECT 
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."2_DIGIT_UNIT_CODE" AS "2 Digit Unit Code",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."ECR_NO" AS "PLPDP ECR Number",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."ECM_Digit" AS "PLPDP ECM Digit (6)",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."DIR_REVISION" AS "DIR Revision",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."ECM_PROJECT" AS "ECM Project",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."MATERIAL" AS "Material",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_PHASE_SYSTEM_STATUS" AS "PLPDP Phase System Status",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_TASK_FINISH_DATE" AS "PLPDP Task Finish Date",
+	"PLPDP_TASK_ACTUAL_FINISH_DATE" As "PLPDP Task Actual Finish Date",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_TASK_ACTIVE_SCHEDULE" AS "PLPDP Task Active Schedule",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_Task_Completed_Day_Range" AS "PLPDP Task Day Range",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_Task_Status_2" AS "PLPDP Task Status (Calculated)",
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."RECORD_COUNT" AS "Record Count",
+	"PLPDP_TASK_HISTORICAL_SCHEDULE" AS "PLPDP Task Historical Schedule",
+	"PLPDP_TASK_NAME" AS "PLPDP Task Name",  
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."QPL_CALC_PROJ" AS "PLPDP QPL", 
+	ROW_NUMBER() Over(PARTITION BY "MATERIAL" ORDER BY "DIR_REVISION" DESC) AS "Filtered" 
+	  FROM "deere.pdm.analytics.model::CA_WORKFLOW_2"  "deere_pdm_analytics_model__CA_WORKFLOW_2"
+	  WHERE 
+		"PLPDP_Task_Status_2"  IN ('Released', 'Created', 'Completed') AND
+		"PLPDP_TASK_NAME" IN ('Release for experimental procurement 2')
+	AND
+	"deere_pdm_analytics_model__CA_WORKFLOW_2"."ECM_PROJECT" = <Parameters.ECM Project (Parameter)>
+	) Ranks
+WHERE
+"Filtered" = 1
+***********************************************************************************************************************************
+
+
+------------------------------WorkFlow Status-----------------------WorkFlow Status-------------------------WorkFlow Status------------------------
+
+/*******************CA_WORKFLOW_2 (Engineering Data Errors: ASSEMBLIES Failing Audit)*****************************************************************/
+
+/*Here, We are creating a new column named 'Assemblies_Failing_Audit_held_up_by_child_part' that displays value 'Bad' once all the conditions mentioned in the CASE statement are met. So that later in the visualization we can filter out the records of only those partnumbers that are stated as 'Bad'.*/
+
+SELECT 
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."2_DIGIT_UNIT_CODE" AS "2 Digit Unit Code",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_TASK_NAME" AS "PLPDP Task Name",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_Task_Status_2" AS "PLPDP Task Status (Calculated)",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_TASK_ALL_STATUSES" AS "PLPDP Task Statuses All",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."ECM_PROJECT" AS "ECM Project",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."MATERIAL_COUNT" AS "Material Count",  
+  CASE 
+  WHEN  "2_DIGIT_UNIT_CODE" IN ('YT', 'EG') AND 
+		PLPDP_TASK_NAME = 'INT: Update PDMLink to DEVELOP' AND 
+		"PLPDP_Task_Status_2" = 'Released' AND 
+		"PLPDP_TASK_ALL_STATUSES" = 'Released-Conditionally Approved' THEN 'Bad'             
+	 END AS Assemblies_Failing_Audit_held_up_by_child_part,
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."MATERIAL" AS "Material"
+  
+FROM "deere.pdm.analytics.model::CA_WORKFLOW_2"  "deere_pdm_analytics_model__CA_WORKFLOW_2"
+WHERE "ECM_PROJECT" = <Parameters.ECM Project (Parameter)>
+
+***********************************************************************************************************************************
+
+/*******************CA_ECM_MTRL_GLOBAL  + CA_EBOM_2 (Cancelled Parts in Global EBOM’s)*****************************************************************/
+
+/*Here, We are creating a new column named 'Cancelled_Parts_Global_EBOM' that displays value 'Bad' once all the conditions mentioned in the CASE statement are met. So that later in the visualization we can filter out the records of only those partnumbers that are stated as 'Bad'.*/
+
+SELECT 
+  "deere_pdm_analytics_model_CA_ECM_MTRL_GLOBAL"."MATERIAL" AS "MATERIAL",
+  "deere_pdm_analytics_model_CA_ECM_MTRL_GLOBAL"."ECM_PROJECT" AS "ECM Project",
+  "deere_pdm_analytics_model_CA_ECM_MTRL_GLOBAL"."PDM_PART_TYPE" AS "PDM Part Type",
+  "deere_pdm_analytics_model_CA_ECM_MTRL_GLOBAL"."CROSS_PLANT_MATERIAL_STATUS" AS "Cross Plant Material Status",
+  "deere_pdm_analytics_model_CA_ECM_MTRL_GLOBAL"."2_DIGIT_UNIT_CODE" AS "2 DIGIT UNIT CODE",
+  "deere_pdm_analytics_model_CA_ECM_MTRL_GLOBAL"."MATERIAL_COUNT" AS "Material Count",
+CASE
+	WHEN  "deere_pdm_analytics_model_CA_ECM_MTRL_GLOBAL"."2_DIGIT_UNIT_CODE" IN ('YT', 'EG') AND 
+		"CROSS_PLANT_MATERIAL_STATUS" IN ('F5', 'F6') AND 
+		"PDM_PART_TYPE" IN ('AP', 'AS', 'PP', 'RC', 'PS', 'FK', 'DOC', 'PUB', 'SA', 'SO', 'SK', 'PK') 
+		 THEN 'Bad'
+    END AS Cancelled_Parts_Global_EBOM
+   
+FROM "_SYS_BIC"."deere.pdm.analytics.model/CA_ECM_MTRL_GLOBAL"  "deere_pdm_analytics_model_CA_ECM_MTRL_GLOBAL"  
+
+Where "ECM_PROJECT" = <Parameters.ECM Project (Parameter)>
+
+/*INNER JOIN on Material - Component*/
+
+SELECT 
+  "deere_common_bom_model_CA_EBOM_2"."IDNRK" AS "Component"
+     
+FROM  "_SYS_BIC"."deere.common.bom.model/CA_EBOM_2" ( 'PLACEHOLDER' = ('$$VALID_FROM$$', '1900-01-01'), 'PLACEHOLDER' = ('$$VALID_TO$$', '9999-12-31'), 'PLACEHOLDER' = ('$$PROMPT$$', 'X') ) "deere_common_bom_model_CA_EBOM_2"
+
+***********************************************************************************************************************************
+
+/*******************CA_ECM_MTRL_LOCAL  + CA_MBOM_2 (Cancelled Parts in Local MBOM))*****************************************************************/
+
+/*Here, We are creating a new column named 'Cancelled_Parts_Local_MBOM' that displays value 'Bad' once all the conditions mentioned in the CASE statement are met. So that later in the visualization we can filter out the records of only those partnumbers that are stated as 'Bad'.*/
+
+SELECT 
+  "deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."MATERIAL_NUMBER" AS "MATERIAL",
+  "deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."ECM_PROJECT" AS "ECM Project",
+  "deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."PDM_PART_TYPE" AS "PDM Part Type",
+  "deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."PLANT_SPECIFIC_MATERIAL_STATUS" AS "Plant Specific Material Status",
+  "deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."2_DIGIT_UNIT_CODE" AS "2 DIGIT UNIT CODE",
+  "deere_common_bom_model_CA_MBOM_2"."IDNRK" AS "Component",
+  "deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."MATERIAL_NUMBER" AS "Material Count",
+CASE
+	WHEN  "deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."2_DIGIT_UNIT_CODE" IN ('BZ', 'DW', 'EJ', 'F3', 'F6', 'F9', 'TX', 'WA', 'WJ', 'YN') AND 
+		"PLANT_SPECIFIC_MATERIAL_STATUS" IN ('50', '51', '60', '61', '62', '53', '63', '65') AND 
+		"PDM_PART_TYPE" IN ('AP', 'AS', 'PP', 'RC', 'PS', 'FK', 'DOC', 'PUB', 'SA', 'SO', 'SK', 'PK') 
+		 THEN 'Bad'           
+	END AS Cancelled_Parts_Local_MBOM
+   
+FROM "deere.pdm.analytics.model::CA_ECM_MTRL_LOCAL"  "deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL" 
+INNER JOIN "_SYS_BIC"."deere.common.bom.model/CA_MBOM_2" ( 'PLACEHOLDER' = ('$$VALID_FROM$$', '1900-01-01'), 'PLACEHOLDER' = ('$$VALID_TO$$', '9999-12-31'), 'PLACEHOLDER' = ('$$PROMPT$$', 'X') ) "deere_common_bom_model_CA_MBOM_2"
+	ON ("deere_pdm_analytics_model__CA_ECM_MTRL_LOCAL"."MATERIAL_NUMBER" = "deere_common_bom_model_CA_MBOM_2"."IDNRK")
+WHERE "ECM_PROJECT" = <Parameters.ECM Project (Parameter)>
+
+***********************************************************************************************************************************
+
+/*******************CA_ECM_MTRL_GLOBAL  + CA_EBOM_2 (Orphaned Parts)*****************************************************************/
+/*Here, We are creating a new column named 'Orphaned_Parts' that displays text 'Bad' once all the conditions mentioned in the CASE statement are met. So that later in the visualization we can filter out the records of only those partnumbers that are stated as 'Bad'.*/
+
+SELECT 
+  "deere_pdm_analytics_model_CA_ECM_MTRL_GLOBAL"."MATERIAL" AS "MATERIAL",
+  "deere_pdm_analytics_model_CA_ECM_MTRL_GLOBAL"."ECM_PROJECT" AS "ECM Project",
+  "deere_pdm_analytics_model_CA_ECM_MTRL_GLOBAL"."PDM_PART_TYPE" AS "PDM Part Type",
+  "deere_pdm_analytics_model_CA_ECM_MTRL_GLOBAL"."CROSS_PLANT_MATERIAL_STATUS" AS "Cross Plant Material Status",
+  "deere_pdm_analytics_model_CA_ECM_MTRL_GLOBAL"."2_DIGIT_UNIT_CODE" AS "2 DIGIT UNIT CODE",
+  DIR_REVISION AS "DIR Revision",
+  ECM_NUMBER AS "ECM Number",
+  "deere_pdm_analytics_model_CA_ECM_MTRL_GLOBAL"."MATERIAL_COUNT" AS "Material Count", 
+CASE
+	WHEN "deere_pdm_analytics_model_CA_ECM_MTRL_GLOBAL"."2_DIGIT_UNIT_CODE" IN ('YT', 'EG') AND 
+             "CROSS_PLANT_MATERIAL_STATUS" IN ('A0', 'A1', 'B1', 'B2', 'C2', 'C3', 'C4') AND
+             "ZZACTION_TEXT" NOT IN ('Move', 'remove Fro', 'Cancel – N') AND
+             "LATEST_REV_LEVEL" ='X' AND 
+             "PDM_PART_TYPE" IN ('AP', 'AS', 'PP', 'RC', 'PS') 
+		 THEN 'Bad'           
+	END AS Orphaned_Parts
+   
+FROM "_SYS_BIC"."deere.pdm.analytics.model/CA_ECM_MTRL_GLOBAL"  "deere_pdm_analytics_model_CA_ECM_MTRL_GLOBAL"
+WHERE "CROSS_PLANT_MATERIAL_STATUS" IN ('A0', 'A1', 'B1', 'B2', 'C2', 'C3', 'C4') AND
+             "ZZACTION_TEXT" NOT IN ('Move', 'remove Fro', 'Cancel – N') AND
+             "LATEST_REV_LEVEL" ='X' AND 
+             "PDM_PART_TYPE" IN ('AP', 'AS', 'PP', 'RC', 'PS')
+AND "ECM_PROJECT" = <Parameters.ECM Project (Parameter)>
+
+/*LEFT JOIN on Material - Component*/
+
+SELECT "deere_common_bom_model_CA_EBOM_2"."IDNRK" As "Component"                           
+FROM "_SYS_BIC"."deere.common.bom.model/CA_EBOM_2" "deere_common_bom_model_CA_EBOM_2"
+
+***********************************************************************************************************************************
+
+/*******************CA_WORKFLOW_2 (DEs Per Month )*****************************************************************/
+
+SELECT 
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."2_DIGIT_UNIT_CODE" AS "2 Digit Unit Code",
+PLPDP_TASK_RESPONSIBLE_PERSON_ID1 As "PLPDP Task Responsible Person ID1",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."RECORD_COUNT" AS "Record Count",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."ECM_PROJECT" AS "ECM Project",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."MATERIAL" AS "Material",
+"PLPDP_TASK_RESPONSIBLE_PERSON_ROLE" AS "PLPDP Task Role Type Name",
+"PLPDP_TASK_NAME" AS "PLPDP Task Name",
+"PLPDP_Task_Status_2" AS "PLPDP Task Status (Calculated)",
+"PLPDP_Task_Responsible_Person_Count" AS "PLPDP Task Responsible Person ID1 Count",
+"PLPDP_TASK_ACTUAL_FINISH_DATE" AS "PLPDP Task Actual Finish Date",
+"PLPDP_PROJECT_SYSTEM_STATUS" AS "PLPDP Project System Status", 
+"PLPDP_Task_Above_Below_Expected_Duration" AS "PLPDP Task Above or Below Expected Duration",
+PLPDP_PHASE_NAME_GROUP AS "PLPDP Phase Name",
+PLPDP_PHASE_TYPE_TEXT As "PLPDP Phase Name Group",
+PLPDP_TASK_ALL_STATUSES As "PLPDP Task Statuses All",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."PLPDP_PHASE_SYSTEM_STATUS" AS "PLPDP Phase System Status",
+"deere_pdm_analytics_model__CA_WORKFLOW_2"."QPL_CALC_PROJ" AS "PLPDP QPL"
+
+FROM "deere.pdm.analytics.model::CA_WORKFLOW_2"  "deere_pdm_analytics_model__CA_WORKFLOW_2"
+WHERE 	"deere_pdm_analytics_model__CA_WORKFLOW_2"."2_DIGIT_UNIT_CODE" IN ('BZ', 'DW', 'EJ', 'F3', 'F6', 'F9', 'TX', 'WA', 'WJ', 'YN','YT','EG') 
+AND ECM_PROJECT = <Parameters.ECM Project (Parameter)>
+
+***********************************************************************************************************************************
+
+
+
+
+
+
+
+
+
